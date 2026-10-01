@@ -10,21 +10,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-:root{--bg1:#0b1220;--bg2:#16233f;--card:rgba(30,41,59,.72);--tx:#e2e8f0;--mut:#94a3b8;--line:#334155;--shadow:0 8px 24px rgba(0,0,0,.35)}
-[data-theme="light"]{--bg1:#eef4ff;--bg2:#dbeafe;--card:rgba(255,255,255,.85);--tx:#0f172a;--mut:#64748b;--line:#cbd5e1;--shadow:0 8px 24px rgba(30,64,175,.12)}
+:root{--bg1:#0b1220;--bg2:#16233f;--card:rgba(30,41,59,.72);--tx:#e2e8f0;--mut:#94a3b8;--line:#334155;--tip:#0f172af2;--shadow:0 8px 24px rgba(0,0,0,.35)}
+[data-theme="light"]{--bg1:#eef4ff;--bg2:#dbeafe;--card:rgba(255,255,255,.88);--tx:#0f172a;--mut:#64748b;--line:#cbd5e1;--tip:#ffffffF2;--shadow:0 8px 24px rgba(30,64,175,.12)}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;font-family:system-ui,"Noto Sans Thai",sans-serif;color:var(--tx);padding:16px;
-  background:radial-gradient(circle at 15% 0%,var(--bg2),var(--bg1) 60%) fixed;transition:background .4s,color .3s}
+body{margin:0;min-height:100vh;font-family:system-ui,"Noto Sans Thai",sans-serif;color:var(--tx);padding:16px;background:radial-gradient(circle at 15% 0%,var(--bg2),var(--bg1) 60%) fixed;transition:background .4s,color .3s}
 .wrap{max-width:1100px;margin:auto}
 header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
 h1{font-size:1.45rem;margin:0;display:flex;align-items:center;gap:8px}
 h1 .ico{width:1.5em;height:1.5em;color:#22c55e}
-.right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .st{font-size:.85rem;color:var(--mut)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px}
 .dot.on{background:#22c55e;animation:pulse 1.8s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.7)}100%{box-shadow:0 0 0 10px rgba(34,197,94,0)}}
-.btn{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:.85rem;transition:.2s}
+.btn{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:.85rem;transition:.2s}
 .btn:hover{transform:translateY(-1px)}
 .btn.on{background:#3b82f6;border-color:#3b82f6;color:#fff}
 .ico{width:1.1em;height:1.1em;vertical-align:-.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -49,222 +48,193 @@ h1 .ico{width:1.5em;height:1.5em;color:#22c55e}
 .card .u{font-size:.8rem;color:var(--mut)}
 .card.flash{animation:flash .7s}
 @keyframes flash{0%{box-shadow:0 0 0 0 var(--fc)}100%{box-shadow:0 0 0 12px transparent}}
-.box{padding:12px}
-.box h3{margin:0 0 8px;font-size:.95rem;color:var(--mut);display:flex;align-items:center;gap:6px;justify-content:space-between}
+.box{padding:14px}
+.box h3{margin:0 0 10px;font-size:.95rem;color:var(--mut);display:flex;align-items:center;gap:6px}
 .map{margin-bottom:16px}
 #map{height:320px;border-radius:10px}
 .tools{display:flex;justify-content:space-between;align-items:center;margin:4px 2px 10px;flex-wrap:wrap;gap:8px}
 .tools b{font-size:1rem}
 .seg{display:flex;gap:6px}
-.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.cv{position:relative;height:230px}
 footer{text-align:center;color:var(--mut);font-size:.8rem;margin-top:18px}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1><svg class="ico" viewBox="0 0 24 24"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>Smart Air Quality Dashboard</h1>
+  <h1><svg class="ico" viewBox="0 0 24 24"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg><span>Smart Air Quality Dashboard</span></h1>
   <div class="right">
-    <div class="st"><span id="dot" class="dot"></span><span id="status">กำลังเชื่อมต่อ...</span> · อัปเดตล่าสุด: <span id="upd">-</span></div>
-    <button class="btn" id="themeBtn" title="สลับธีม"></button>
+    <div class="st"><span id="dot" class="dot"></span><span id="status"></span> · <span data-i18n="upd"></span>: <span id="upd">-</span></div>
+    <button class="btn" id="langBtn"></button>
+    <button class="btn" id="themeBtn"></button>
   </div>
 </header>
 
 <section class="panel hero">
-  <div class="n">ดัชนีคุณภาพอากาศ (AQI)</div>
+  <div class="n" data-i18n="aqiTitle"></div>
   <svg class="gauge" viewBox="0 0 220 125" id="gauge">
     <g id="arcs"></g>
-    <g class="needle" id="needle">
-      <line x1="110" y1="110" x2="110" y2="34" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="110" cy="110" r="8" fill="currentColor"/>
-    </g>
+    <g class="needle" id="needle"><line x1="110" y1="110" x2="110" y2="34" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="110" cy="110" r="8" fill="currentColor"/></g>
   </svg>
   <div class="aqiV" id="aqiV">--</div>
-  <div class="aqiT" id="aqiT">รอข้อมูล</div>
+  <div class="aqiT" id="aqiT"></div>
   <div class="advice" id="advice"></div>
-  <div class="legend">
-    <div class="bar"><i id="pin"></i></div>
-    <div class="lbls"><span>0 ดีมาก</span><span>50 ปานกลาง</span><span>100 เริ่มมีผล</span><span>150 มีผล</span><span>200+</span></div>
-  </div>
+  <div class="legend"><div class="bar"><i id="pin"></i></div>
+    <div class="lbls"><span data-i18n="lb0"></span><span data-i18n="lb1"></span><span data-i18n="lb2"></span><span data-i18n="lb3"></span><span>200+</span></div></div>
 </section>
 
 <div class="grid" id="cards"></div>
 
 <div class="box map">
-  <h3><span><svg class="ico" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> ตำแหน่งของเซ็นเซอร์</span></h3>
+  <h3><svg class="ico" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span data-i18n="mapTitle"></span></h3>
   <div id="map"></div>
 </div>
 
-<div class="tools">
-  <b>กราฟย้อนหลัง</b>
-  <div class="seg" id="seg">
-    <button class="btn on" data-n="30">30 จุด</button>
-    <button class="btn" data-n="60">60 จุด</button>
-    <button class="btn" data-n="100">100 จุด</button>
-  </div>
-</div>
+<div class="tools"><b data-i18n="histTitle"></b>
+  <div class="seg" id="seg"><button class="btn on" data-n="30"></button><button class="btn" data-n="60"></button><button class="btn" data-n="100"></button></div></div>
 <div class="charts">
-  <div class="box"><h3>PM2.5 / PM10 (µg/m³)</h3><canvas id="c1"></canvas></div>
-  <div class="box"><h3>อุณหภูมิ (°C) / ความชื้น (%)</h3><canvas id="c2"></canvas></div>
-  <div class="box"><h3>CO₂ (ppm)</h3><canvas id="c3"></canvas></div>
-  <div class="box"><h3>AQI</h3><canvas id="c4"></canvas></div>
+  <div class="box"><h3 data-i18n="g1"></h3><div class="cv"><canvas id="c1"></canvas></div></div>
+  <div class="box"><h3 data-i18n="g2"></h3><div class="cv"><canvas id="c2"></canvas></div></div>
+  <div class="box"><h3 data-i18n="g3"></h3><div class="cv"><canvas id="c3"></canvas></div></div>
+  <div class="box"><h3 data-i18n="g4"></h3><div class="cv"><canvas id="c4"></canvas></div></div>
 </div>
-<footer>ESP32 + ESPHome → Firebase RTDB → GitHub Pages · ข้อมูลจำลองด้วยการสุ่มค่า</footer>
+<footer data-i18n="foot"></footer>
 </div>
 
 <script>
-const DB_URL = "https://iot-131-default-rtdb.asia-southeast1.firebasedatabase.app";
-const SENSOR_POS = [7.8804, 98.3923]; // แก้เป็นพิกัดจริงของเซ็นเซอร์
-firebase.initializeApp({ databaseURL: DB_URL });
-const db = firebase.database();
+const DB_URL="https://iot-131-default-rtdb.asia-southeast1.firebasedatabase.app";
+const SENSOR_POS=[7.8804,98.3923]; // แก้เป็นพิกัดจริงของเซ็นเซอร์
+firebase.initializeApp({databaseURL:DB_URL});
+const db=firebase.database();
 
-const FIELDS = [
-  {k:"temperature", n:"อุณหภูมิ", u:"°C", d:1, c:"#f97316"},
-  {k:"humidity",    n:"ความชื้น", u:"%", d:1, c:"#38bdf8"},
-  {k:"pm25",        n:"PM2.5", u:"µg/m³", d:1, c:"#ef4444"},
-  {k:"pm10",        n:"PM10", u:"µg/m³", d:1, c:"#a855f7"},
-  {k:"co2",         n:"CO₂", u:"ppm", d:0, c:"#eab308"},
-  {k:"aqi",         n:"AQI", u:"", d:0, c:"#22c55e"}
-];
-const F = Object.fromEntries(FIELDS.map(f=>[f.k,f]));
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+// ---------- ภาษา / Language ----------
+const I18N={
+ th:{aqiTitle:"ดัชนีคุณภาพอากาศ (AQI)",wait:"รอข้อมูล",mapTitle:"ตำแหน่งของเซ็นเซอร์",histTitle:"กราฟย้อนหลัง",pts:"จุด",
+  conn:"กำลังเชื่อมต่อ...",on:"เชื่อมต่อ Firebase แล้ว",off:"ขาดการเชื่อมต่อ",upd:"อัปเดตล่าสุด",
+  g1:"PM2.5 / PM10 (µg/m³)",g2:"อุณหภูมิ (°C) / ความชื้น (%)",g3:"CO₂ (ppm)",g4:"AQI",
+  foot:"ESP32 + ESPHome → Firebase RTDB → GitHub Pages · ข้อมูลจำลองด้วยการสุ่มค่า",
+  light:"สว่าง",dark:"มืด",lang:"English",lb0:"0 ดีมาก",lb1:"50 ปานกลาง",lb2:"100 เริ่มมีผล",lb3:"150 มีผล",
+  f_temperature:"อุณหภูมิ",f_humidity:"ความชื้น",f_pm25:"PM2.5",f_pm10:"PM10",f_co2:"CO₂",f_aqi:"AQI",
+  l1:"ดีมาก",l2:"ปานกลาง",l3:"เริ่มมีผลกระทบต่อสุขภาพ",l4:"มีผลกระทบต่อสุขภาพ",
+  a1:"อากาศดี ทำกิจกรรมได้ตามปกติ",a2:"ผู้ที่ไวต่อมลพิษควรระวัง",a3:"ลดกิจกรรมกลางแจ้ง ควรสวมหน้ากาก",a4:"งดกิจกรรมกลางแจ้ง ปิดหน้าต่าง/เปิดเครื่องฟอกอากาศ"},
+ en:{aqiTitle:"Air Quality Index (AQI)",wait:"Waiting for data",mapTitle:"Sensor Location",histTitle:"History",pts:"pts",
+  conn:"Connecting...",on:"Connected to Firebase",off:"Disconnected",upd:"Last update",
+  g1:"PM2.5 / PM10 (µg/m³)",g2:"Temperature (°C) / Humidity (%)",g3:"CO₂ (ppm)",g4:"AQI",
+  foot:"ESP32 + ESPHome → Firebase RTDB → GitHub Pages · Simulated random data",
+  light:"Light",dark:"Dark",lang:"ภาษาไทย",lb0:"0 Good",lb1:"50 Moderate",lb2:"100 Sensitive",lb3:"150 Unhealthy",
+  f_temperature:"Temperature",f_humidity:"Humidity",f_pm25:"PM2.5",f_pm10:"PM10",f_co2:"CO₂",f_aqi:"AQI",
+  l1:"Good",l2:"Moderate",l3:"Unhealthy for sensitive groups",l4:"Unhealthy",
+  a1:"Air is clean. Enjoy normal activities.",a2:"Sensitive people should take care.",a3:"Reduce outdoor activity and wear a mask.",a4:"Avoid outdoors. Close windows / use an air purifier."}
+};
+let lang="th",theme="dark",online=null,lastData=null;
+try{lang=localStorage.getItem("lang")||"th";theme=localStorage.getItem("theme")||"dark"}catch(e){}
+const t=k=>I18N[lang][k];
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmtTime=ts=>(!ts||ts<1e9)?"-":new Date(ts*1000).toLocaleTimeString(lang==="th"?"th-TH":"en-GB");
 
-function aqiInfo(v){
-  if(v<=50)  return {t:"ดีมาก",c:"#22c55e",a:"อากาศดี ทำกิจกรรมได้ตามปกติ"};
-  if(v<=100) return {t:"ปานกลาง",c:"#eab308",a:"ผู้ที่ไวต่อมลพิษควรระวัง"};
-  if(v<=150) return {t:"เริ่มมีผลกระทบต่อสุขภาพ",c:"#f97316",a:"ลดกิจกรรมกลางแจ้ง ควรสวมหน้ากาก"};
-  return {t:"มีผลกระทบต่อสุขภาพ",c:"#ef4444",a:"งดกิจกรรมกลางแจ้ง ปิดหน้าต่าง/เปิดเครื่องฟอกอากาศ"};
-}
+const FIELDS=[
+ {k:"temperature",u:"°C",d:1,c:"#f97316"},{k:"humidity",u:"%",d:1,c:"#38bdf8"},
+ {k:"pm25",u:"µg/m³",d:1,c:"#ef4444"},{k:"pm10",u:"µg/m³",d:1,c:"#a855f7"},
+ {k:"co2",u:"ppm",d:0,c:"#eab308"},{k:"aqi",u:"",d:0,c:"#22c55e"}];
+const F=Object.fromEntries(FIELDS.map(f=>[f.k,f]));
+function aqiInfo(v){const i=v<=50?1:v<=100?2:v<=150?3:4;return{t:t("l"+i),a:t("a"+i),c:["","#22c55e","#eab308","#f97316","#ef4444"][i]}}
 
 // ---------- ไอคอน ----------
-const svg = p => `<svg class="ico" viewBox="0 0 24 24">${p}</svg>`;
-const ICONS = {
-  temperature: svg('<path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>'),
-  humidity:    svg('<path d="M12 2.7s6 6.3 6 10.8a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7Z"/>'),
-  pm25:        svg('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>'),
-  pm10:        svg('<circle cx="7" cy="8" r="1.5"/><circle cx="14" cy="6" r="1"/><circle cx="17" cy="12" r="2"/><circle cx="9" cy="15" r="2"/><circle cx="15" cy="18" r="1"/><circle cx="4" cy="14" r="1"/>'),
-  co2:         svg('<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4 4 0 0 1 0 8Z"/>'),
-  aqi:         svg('<path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/>'),
-  sun:  svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
-  moon: svg('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>')
-};
+const svg=p=>`<svg class="ico" viewBox="0 0 24 24">${p}</svg>`;
+const ICONS={
+ temperature:svg('<path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>'),
+ humidity:svg('<path d="M12 2.7s6 6.3 6 10.8a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7Z"/>'),
+ pm25:svg('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>'),
+ pm10:svg('<circle cx="7" cy="8" r="1.5"/><circle cx="14" cy="6" r="1"/><circle cx="17" cy="12" r="2"/><circle cx="9" cy="15" r="2"/><circle cx="15" cy="18" r="1"/><circle cx="4" cy="14" r="1"/>'),
+ co2:svg('<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4 4 0 0 1 0 8Z"/>'),
+ aqi:svg('<path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/>'),
+ sun:svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+ moon:svg('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>'),
+ globe:svg('<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/>')};
 
-// ---------- เกจ AQI ----------
-(function(){
-  const cols=["#22c55e","#eab308","#f97316","#ef4444"], R=90, C=110;
-  const pt=a=>[C-R*Math.cos(a*Math.PI/180), C-R*Math.sin(a*Math.PI/180)];
-  let h="";
-  for(let i=0;i<4;i++){
-    const [x1,y1]=pt(i*45+2), [x2,y2]=pt((i+1)*45-2);
-    h+=`<path d="M${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2}" fill="none" stroke="${cols[i]}" stroke-width="16" stroke-linecap="round"/>`;
-  }
-  document.getElementById("arcs").innerHTML=h;
-})();
-function setNeedle(v){
-  const p=Math.max(0,Math.min(v,200))/200;
-  document.getElementById("needle").style.transform=`rotate(${-90+p*180}deg)`;
-  document.getElementById("pin").style.left=`calc(${p*100}% - 2px)`;
-}
-setNeedle(0);
-
-// ---------- ธีม ----------
-function applyTheme(t){
-  document.documentElement.dataset.theme=t;
-  document.getElementById("themeBtn").innerHTML = (t==="dark"?ICONS.sun+" สว่าง":ICONS.moon+" มืด");
-  document.getElementById("gauge").style.color=css("--tx");
-  try{localStorage.setItem("theme",t)}catch(e){}
-  if(window.charts) charts.forEach(o=>themeChart(o.ch));
-}
-document.getElementById("themeBtn").onclick=()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
+// ---------- เกจ ----------
+(function(){const cols=["#22c55e","#eab308","#f97316","#ef4444"],R=90,C=110,pt=a=>[C-R*Math.cos(a*Math.PI/180),C-R*Math.sin(a*Math.PI/180)];let h="";
+ for(let i=0;i<4;i++){const[a,b]=pt(i*45+2),[c,d]=pt((i+1)*45-2);h+=`<path d="M${a} ${b} A${R} ${R} 0 0 1 ${c} ${d}" fill="none" stroke="${cols[i]}" stroke-width="16" stroke-linecap="round"/>`}
+ document.getElementById("arcs").innerHTML=h})();
+function setNeedle(v){const p=Math.max(0,Math.min(v,200))/200;document.getElementById("needle").style.transform=`rotate(${-90+p*180}deg)`;document.getElementById("pin").style.left=`calc(${p*100}% - 2px)`}
 
 // ---------- การ์ด ----------
 const cardsEl=document.getElementById("cards");
-FIELDS.forEach(f=>{
-  cardsEl.insertAdjacentHTML("beforeend",
-   `<div class="card" id="card-${f.k}" style="border-left-color:${f.c};--fc:${f.c}66">
-      <div class="n" style="color:${f.c}">${ICONS[f.k]}<span>${f.n}</span></div>
-      <div class="v" id="v-${f.k}">--</div><div class="u">${f.u}</div></div>`);
-});
-function setNum(el,to,d){
-  const from=parseFloat(el.dataset.v)||0; el.dataset.v=to;
-  const t0=performance.now();
-  (function step(t){const p=Math.min((t-t0)/700,1);const e=1-Math.pow(1-p,3);
-    el.textContent=(from+(to-from)*e).toFixed(d); if(p<1) requestAnimationFrame(step);})(t0);
-}
-function flash(k){const c=document.getElementById("card-"+k);c.classList.remove("flash");void c.offsetWidth;c.classList.add("flash");}
+FIELDS.forEach(f=>cardsEl.insertAdjacentHTML("beforeend",`<div class="card" id="card-${f.k}" style="border-left-color:${f.c};--fc:${f.c}66"><div class="n" style="color:${f.c}">${ICONS[f.k]}<span id="n-${f.k}"></span></div><div class="v" id="v-${f.k}">--</div><div class="u">${f.u}</div></div>`));
+function setNum(el,to,d){const from=parseFloat(el.dataset.v)||0;el.dataset.v=to;const t0=performance.now();
+ (function s(n){const p=Math.min((n-t0)/700,1),e=1-Math.pow(1-p,3);el.textContent=(from+(to-from)*e).toFixed(d);if(p<1)requestAnimationFrame(s)})(t0)}
+function flash(k){const c=document.getElementById("card-"+k);c.classList.remove("flash");void c.offsetWidth;c.classList.add("flash")}
 
-// ---------- กราฟ ----------
-function mkChart(id,sets){
-  return new Chart(document.getElementById(id),{
-    type:"line",
-    data:{labels:[],datasets:sets.map(s=>({label:s.n,data:[],borderColor:s.c,backgroundColor:s.c+"33",tension:.35,pointRadius:1.5,borderWidth:2,fill:sets.length===1}))},
-    options:{animation:false,plugins:{legend:{labels:{}}},scales:{x:{ticks:{maxTicksLimit:6},grid:{}},y:{ticks:{},grid:{}}}}
-  });
-}
-function themeChart(ch){
-  ["x","y"].forEach(a=>{ch.options.scales[a].ticks.color=css("--mut");ch.options.scales[a].grid.color=css("--line");});
-  ch.options.plugins.legend.labels.color=css("--tx"); ch.update("none");
-}
-const charts=[
-  {ch:mkChart("c1",[F.pm25,F.pm10]),keys:["pm25","pm10"]},
-  {ch:mkChart("c2",[F.temperature,F.humidity]),keys:["temperature","humidity"]},
-  {ch:mkChart("c3",[F.co2]),keys:["co2"]},
-  {ch:mkChart("c4",[F.aqi]),keys:["aqi"]}
-];
-let saved="dark"; try{saved=localStorage.getItem("theme")||"dark"}catch(e){}
-applyTheme(saved);
-
-const fmtTime=ts=>(!ts||ts<1e9)?"-":new Date(ts*1000).toLocaleTimeString("th-TH");
+// ---------- กราฟ (สไตล์ใหม่) ----------
+const hexA=(h,a)=>h+Math.round(a*255).toString(16).padStart(2,"0");
+const bands={id:"bands",beforeDatasetsDraw(ch){const y=ch.scales.y,a=ch.chartArea,c=ch.ctx;
+ [[0,50,"#22c55e"],[50,100,"#eab308"],[100,150,"#f97316"],[150,200,"#ef4444"]].forEach(([lo,hi,col])=>{c.fillStyle=col+"22";const y1=y.getPixelForValue(hi);c.fillRect(a.left,y1,a.right-a.left,y.getPixelForValue(lo)-y1)})}};
+function mkChart(id,keys,extra={}){
+ const ds=keys.map(k=>{const col=F[k].c;return{key:k,unit:F[k].u,label:"",data:[],borderColor:col,borderWidth:2.5,tension:.4,fill:true,
+  backgroundColor:cx=>{const a=cx.chart.chartArea;if(!a)return hexA(col,.2);const g=cx.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,hexA(col,.35));g.addColorStop(1,hexA(col,0));return g},
+  pointRadius:cx=>cx.dataIndex===cx.dataset.data.length-1?4.5:0,pointHoverRadius:6,pointBackgroundColor:col,pointBorderColor:"#fff",pointBorderWidth:2}});
+ const ch=new Chart(document.getElementById(id),{type:"line",data:{labels:[],datasets:ds},plugins:extra.plugins||[],
+  options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},interaction:{mode:"index",intersect:false},
+   plugins:{legend:{align:"end",labels:{usePointStyle:true,pointStyle:"circle",boxWidth:8,boxHeight:8}},
+    tooltip:{padding:10,cornerRadius:10,borderWidth:1,usePointStyle:true,callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y.toFixed(F[c.dataset.key].d)} ${c.dataset.unit}`}}},
+   scales:{x:{ticks:{maxTicksLimit:5,maxRotation:0},grid:{display:false},border:{display:false}},
+    y:{ticks:{maxTicksLimit:5},grid:{},border:{display:false},min:extra.min,max:extra.max}}}});
+ return{ch,keys}}
+function themeChart(ch){const o=ch.options,m=css("--mut");
+ o.scales.x.ticks.color=m;o.scales.y.ticks.color=m;o.scales.y.grid.color=css("--line");o.plugins.legend.labels.color=css("--tx");
+ const tp=o.plugins.tooltip;tp.backgroundColor=css("--tip");tp.borderColor=css("--line");tp.titleColor=css("--tx");tp.bodyColor=css("--tx");ch.update("none")}
+const charts=[mkChart("c1",["pm25","pm10"]),mkChart("c2",["temperature","humidity"]),mkChart("c3",["co2"]),mkChart("c4",["aqi"],{plugins:[bands],min:0,max:200})];
 
 // ---------- แผนที่ ----------
 const map=L.map("map").setView(SENSOR_POS,14);
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(map);
 const marker=L.circleMarker(SENSOR_POS,{radius:14,color:"#fff",weight:3,fillColor:"#94a3b8",fillOpacity:.9}).addTo(map);
-marker.bindPopup("esp32-air-01<br>รอข้อมูล...");
+
+// ---------- แสดงผล (เรียกซ้ำเมื่อเปลี่ยนภาษา/ธีม) ----------
+function renderLatest(){
+ const d=lastData,a=d?aqiInfo(d.aqi):null;
+ document.getElementById("aqiT").textContent=d?a.t:t("wait");
+ document.getElementById("advice").textContent=d?a.a:"";
+ if(d){document.getElementById("aqiT").style.color=a.c;
+  marker.setPopupContent(`<b>${d.device_id||"esp32-air-01"}</b><br>AQI: ${Math.round(d.aqi)} (${a.t})<br>PM2.5: ${Number(d.pm25).toFixed(1)} µg/m³<br>${t("f_temperature")}: ${Number(d.temperature).toFixed(1)} °C`)}
+ else marker.setPopupContent("esp32-air-01<br>"+t("wait"));
+ document.getElementById("upd").textContent=d?(fmtTime(d.timestamp)!=="-"?fmtTime(d.timestamp):new Date().toLocaleTimeString()):"-"}
+function renderAll(){
+ document.documentElement.lang=lang;document.documentElement.dataset.theme=theme;
+ document.querySelectorAll("[data-i18n]").forEach(e=>e.textContent=t(e.dataset.i18n));
+ FIELDS.forEach(f=>document.getElementById("n-"+f.k).textContent=t("f_"+f.k));
+ document.querySelectorAll("#seg .btn").forEach(b=>b.textContent=`${b.dataset.n} ${t("pts")}`);
+ document.getElementById("status").textContent=online===null?t("conn"):online?t("on"):t("off");
+ document.getElementById("langBtn").innerHTML=ICONS.globe+" "+t("lang");
+ document.getElementById("themeBtn").innerHTML=theme==="dark"?ICONS.sun+" "+t("light"):ICONS.moon+" "+t("dark");
+ document.getElementById("gauge").style.color=css("--tx");
+ charts.forEach(o=>{o.ch.data.datasets.forEach(s=>s.label=t("f_"+s.key));themeChart(o.ch)});
+ renderLatest()}
+document.getElementById("langBtn").onclick=()=>{lang=lang==="th"?"en":"th";try{localStorage.setItem("lang",lang)}catch(e){}renderAll()};
+document.getElementById("themeBtn").onclick=()=>{theme=theme==="dark"?"light":"dark";try{localStorage.setItem("theme",theme)}catch(e){}renderAll()};
 
 // ---------- Realtime: latest ----------
 db.ref("latest").on("value",snap=>{
-  const d=snap.val(); if(!d) return;
-  if(typeof d.lat==="number"&&typeof d.lng==="number") marker.setLatLng([d.lat,d.lng]);
-  const a=aqiInfo(d.aqi);
-  marker.setStyle({fillColor:a.c});
-  marker.setPopupContent(`<b>${d.device_id||"esp32-air-01"}</b><br>AQI: ${Math.round(d.aqi)} (${a.t})<br>PM2.5: ${Number(d.pm25).toFixed(1)} µg/m³<br>อุณหภูมิ: ${Number(d.temperature).toFixed(1)} °C`);
-  FIELDS.forEach(f=>{ if(typeof d[f.k]==="number"){setNum(document.getElementById("v-"+f.k),d[f.k],f.d);flash(f.k);} });
-  const v=document.getElementById("aqiV"); setNum(v,d.aqi,0); v.style.color=a.c;
-  document.getElementById("aqiT").textContent=a.t;
-  document.getElementById("aqiT").style.color=a.c;
-  document.getElementById("advice").textContent=a.a;
-  setNeedle(d.aqi);
-  document.getElementById("upd").textContent=fmtTime(d.timestamp)!=="-"?fmtTime(d.timestamp):new Date().toLocaleTimeString("th-TH");
-});
+ const d=snap.val();if(!d)return;lastData=d;
+ if(typeof d.lat==="number"&&typeof d.lng==="number")marker.setLatLng([d.lat,d.lng]);
+ marker.setStyle({fillColor:aqiInfo(d.aqi).c});
+ FIELDS.forEach(f=>{if(typeof d[f.k]==="number"){setNum(document.getElementById("v-"+f.k),d[f.k],f.d);flash(f.k)}});
+ const v=document.getElementById("aqiV");setNum(v,d.aqi,0);v.style.color=aqiInfo(d.aqi).c;
+ setNeedle(d.aqi);renderLatest()});
 
 // ---------- Realtime: history ----------
 let histRef=null;
 function subscribeHistory(n){
-  if(histRef) histRef.off();
-  histRef=db.ref("history").limitToLast(n);
-  histRef.on("value",snap=>{
-    const rows=[]; snap.forEach(c=>{rows.push(c.val())});
-    const labels=rows.map(r=>fmtTime(r.timestamp));
-    charts.forEach(o=>{
-      o.ch.data.labels=labels;
-      o.keys.forEach((k,i)=>{o.ch.data.datasets[i].data=rows.map(r=>r[k])});
-      o.ch.update();
-    });
-  });
-}
-document.querySelectorAll("#seg .btn").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("#seg .btn").forEach(x=>x.classList.remove("on"));
-  b.classList.add("on"); subscribeHistory(+b.dataset.n);
-});
-subscribeHistory(30);
+ if(histRef)histRef.off();
+ histRef=db.ref("history").limitToLast(n);
+ histRef.on("value",snap=>{const rows=[];snap.forEach(c=>{rows.push(c.val())});
+  const labels=rows.map(r=>fmtTime(r.timestamp));
+  charts.forEach(o=>{o.ch.data.labels=labels;o.ch.data.datasets.forEach(s=>s.data=rows.map(r=>r[s.key]));o.ch.update()})})}
+document.querySelectorAll("#seg .btn").forEach(b=>b.onclick=()=>{document.querySelectorAll("#seg .btn").forEach(x=>x.classList.remove("on"));b.classList.add("on");subscribeHistory(+b.dataset.n)});
+db.ref(".info/connected").on("value",s=>{online=s.val()===true;document.getElementById("dot").className="dot"+(online?" on":"");document.getElementById("status").textContent=online?t("on"):t("off")});
 
-// ---------- สถานะการเชื่อมต่อ ----------
-db.ref(".info/connected").on("value",s=>{
-  const on=s.val()===true;
-  document.getElementById("dot").className="dot"+(on?" on":"");
-  document.getElementById("status").textContent=on?"เชื่อมต่อ Firebase แล้ว":"ขาดการเชื่อมต่อ";
-});
+setNeedle(0);renderAll();subscribeHistory(30);
 </script>
 </body>
 </html>
