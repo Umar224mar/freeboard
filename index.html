@@ -62,6 +62,7 @@ body{margin:0;min-height:100vh;font-family:"Noto Sans Thai",system-ui,sans-serif
 .center{display:flex;flex-direction:column}
 #map{flex:1;min-height:560px;background:#0a1226}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--tip);color:var(--tx);border:1px solid var(--line)}
+[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(195deg) brightness(.85) contrast(.9) saturate(.55)}
 .pulse{width:16px;height:16px;margin:4px;border-radius:50%;background:var(--mc,#22c55e);box-shadow:0 0 14px var(--mc,#22c55e);position:relative}
 .pulse::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--mc,#22c55e);animation:ring 2s infinite}
 @keyframes ring{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.8);opacity:0}}
@@ -222,10 +223,8 @@ const charts=[mkChart("c1",["pm25","pm10"]),mkChart("c2",["temperature","humidit
 
 // ---------- แผนที่ ----------
 const map=L.map("map").setView(SENSOR_POS,14);
-const TILES={dark:L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap &copy; CARTO"}),
- light:L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"})};
-let curTile=null;
-function setTiles(){const n=TILES[theme];if(curTile===n)return;if(curTile)map.removeLayer(curTile);n.addTo(map);curTile=n}
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(map);
+function setTiles(){}
 const marker=L.marker(SENSOR_POS,{icon:L.divIcon({className:"",html:'<div class="pulse"></div>',iconSize:[24,24]})}).addTo(map);
 marker.bindPopup("esp32-air-01");
 const zone=L.circle(SENSOR_POS,{radius:400,weight:1,fillOpacity:.14,color:"#22c55e"}).addTo(map);
