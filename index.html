@@ -67,6 +67,28 @@ body{margin:0;min-height:100vh;font-family:"Noto Sans Thai",system-ui,sans-serif
 @keyframes ring{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.8);opacity:0}}
 .seg{display:flex;gap:6px;justify-content:flex-end}
 .cv{position:relative;height:150px}
+.panel{animation:rise .6s both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+.banner{display:none;align-items:center;gap:10px;padding:10px 16px;margin-bottom:14px;border-radius:10px;border:1px solid #ef4444;background:rgba(239,68,68,.16);color:#fecaca;font-weight:600;animation:blink 1.6s infinite}
+[data-theme="light"] .banner{color:#991b1b}
+.banner.show{display:flex}
+@keyframes blink{50%{box-shadow:0 0 22px rgba(239,68,68,.55)}}
+.chip{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid var(--line);letter-spacing:.04em}
+.chip.on{color:#22c55e;border-color:#22c55e;box-shadow:0 0 10px rgba(34,197,94,.35)}
+.chip.off{color:#ef4444;border-color:#ef4444;box-shadow:0 0 10px rgba(239,68,68,.4)}
+.hi{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border:1px dashed var(--line);border-radius:8px;font-size:.8rem;color:var(--mut)}
+.hi b{font-size:.85rem}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{color:var(--mut);font-weight:600;text-align:right;padding:4px 2px}
+th:first-child,td:first-child{text-align:left}
+td{padding:5px 2px;text-align:right;border-top:1px solid var(--line);font-family:Orbitron,sans-serif;font-size:.72rem}
+td:first-child{font-family:"Noto Sans Thai",sans-serif;font-size:.78rem}
+.log{list-style:none;margin:0;padding:0;max-height:170px;overflow:auto;font-size:.78rem}
+.log li{padding:5px 0;border-top:1px solid var(--line)}
+.log li:first-child{border-top:0}
+.log li span{color:var(--mut);margin-right:8px;font-size:.7rem}
+.log .warn{color:#f97316}.log .ok{color:#22c55e}
+.kiosk footer,.kiosk #seg{display:none}
 footer{text-align:center;color:var(--mut);font-size:.75rem;margin-top:14px;letter-spacing:.04em}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}#map{min-height:380px}.top{grid-template-columns:1fr}.ttl{order:2}.tr{justify-content:flex-start}}
 </style>
@@ -78,10 +100,11 @@ footer{text-align:center;color:var(--mut);font-size:.75rem;margin-top:14px;lette
   <div class="ttl" data-i18n="dash"></div>
   <div class="tr">
     <div class="st"><span id="dot" class="dot"></span><span id="status"></span></div>
-    <button class="btn" id="langBtn"></button><button class="btn" id="themeBtn"></button>
+    <span class="chip" id="dev"></span><button class="btn" id="sndBtn"></button><button class="btn" id="fsBtn"></button><button class="btn" id="langBtn"></button><button class="btn" id="themeBtn"></button>
     <div class="clock" id="clock"></div>
   </div>
 </header>
+<div class="banner" id="banner"></div>
 
 <main class="layout">
   <aside class="col">
@@ -92,7 +115,8 @@ footer{text-align:center;color:var(--mut);font-size:.75rem;margin-top:14px;lette
         <div class="legend"><div class="bar"><i id="pin"></i></div>
           <div class="lbls"><span data-i18n="lb0"></span><span data-i18n="lb1"></span><span data-i18n="lb2"></span><span data-i18n="lb3"></span><span>200+</span></div></div>
       </div></section>
-    <section class="panel"><div class="ph"><span data-i18n="sens"></span></div><div class="pb"><div class="grid" id="cards"></div></div></section>
+    <section class="panel"><div class="ph"><span data-i18n="sens"></span></div><div class="pb"><div class="grid" id="cards"></div><div class="hi" id="hi"></div></div></section>
+    <section class="panel"><div class="ph"><span data-i18n="stats"></span><button class="btn" id="csvBtn"></button></div><div class="pb"><table id="stats"></table></div></section>
   </aside>
 
   <section class="panel center">
@@ -106,6 +130,7 @@ footer{text-align:center;color:var(--mut);font-size:.75rem;margin-top:14px;lette
     <section class="panel"><div class="ph" data-i18n="g2"></div><div class="pb"><div class="cv"><canvas id="c2"></canvas></div></div></section>
     <section class="panel"><div class="ph" data-i18n="g3"></div><div class="pb"><div class="cv"><canvas id="c3"></canvas></div></div></section>
     <section class="panel"><div class="ph" data-i18n="g4"></div><div class="pb"><div class="cv"><canvas id="c4"></canvas></div></div></section>
+    <section class="panel"><div class="ph" data-i18n="log"></div><div class="pb"><ul class="log" id="log"></ul></div></section>
   </aside>
 </main>
 <footer data-i18n="foot"></footer>
@@ -119,7 +144,7 @@ const db=firebase.database();
 
 // ---------- ภาษา / Language ----------
 const I18N={
- th:{dash:"ระบบเฝ้าระวังคุณภาพอากาศ",sens:"ค่าเซ็นเซอร์",aqiTitle:"ดัชนีคุณภาพอากาศ (AQI)",wait:"รอข้อมูล",mapTitle:"ตำแหน่งของเซ็นเซอร์",histTitle:"กราฟย้อนหลัง",pts:"จุด",
+ th:{stats:"สถิติ (ช่วงที่แสดง)",mn:"ต่ำสุด",mx:"สูงสุด",av:"เฉลี่ย",log:"บันทึกเหตุการณ์",csv:"CSV",noEv:"ยังไม่มีเหตุการณ์",ok:"กลับสู่ปกติ",hi:"ดัชนีความสบาย",h1:"สบาย",h2:"อุ่น ควรระวัง",h3:"ร้อนอบอ้าว",h4:"อันตราย",dev_on:"อุปกรณ์ออนไลน์",dev_off:"อุปกรณ์ออฟไลน์",ev_pm25:"PM2.5 สูงเกินเกณฑ์",ev_co2:"CO₂ สูง ควรเปิดหน้าต่างระบายอากาศ",ev_aqi:"AQI อยู่ในระดับมีผลต่อสุขภาพ",ev_t:"อากาศร้อนจัด ควรดื่มน้ำและหลีกเลี่ยงแดด",snd:"เสียงแจ้งเตือน",full:"เต็มจอ",dash:"ระบบเฝ้าระวังคุณภาพอากาศ",sens:"ค่าเซ็นเซอร์",aqiTitle:"ดัชนีคุณภาพอากาศ (AQI)",wait:"รอข้อมูล",mapTitle:"ตำแหน่งของเซ็นเซอร์",histTitle:"กราฟย้อนหลัง",pts:"จุด",
   conn:"กำลังเชื่อมต่อ...",on:"เชื่อมต่อ Firebase แล้ว",off:"ขาดการเชื่อมต่อ",upd:"อัปเดตล่าสุด",
   g1:"PM2.5 / PM10 (µg/m³)",g2:"อุณหภูมิ (°C) / ความชื้น (%)",g3:"CO₂ (ppm)",g4:"AQI",
   foot:"ESP32 + ESPHome → Firebase RTDB → GitHub Pages · ข้อมูลจำลองด้วยการสุ่มค่า",
@@ -127,7 +152,7 @@ const I18N={
   f_temperature:"อุณหภูมิ",f_humidity:"ความชื้น",f_pm25:"PM2.5",f_pm10:"PM10",f_co2:"CO₂",f_aqi:"AQI",
   l1:"ดีมาก",l2:"ปานกลาง",l3:"เริ่มมีผลกระทบต่อสุขภาพ",l4:"มีผลกระทบต่อสุขภาพ",
   a1:"อากาศดี ทำกิจกรรมได้ตามปกติ",a2:"ผู้ที่ไวต่อมลพิษควรระวัง",a3:"ลดกิจกรรมกลางแจ้ง ควรสวมหน้ากาก",a4:"งดกิจกรรมกลางแจ้ง ปิดหน้าต่าง/เปิดเครื่องฟอกอากาศ"},
- en:{dash:"AIR QUALITY MONITORING",sens:"Sensors",aqiTitle:"Air Quality Index (AQI)",wait:"Waiting for data",mapTitle:"Sensor Location",histTitle:"History",pts:"pts",
+ en:{stats:"Statistics (visible range)",mn:"Min",mx:"Max",av:"Avg",log:"Event Log",csv:"CSV",noEv:"No events yet",ok:"Back to normal",hi:"Comfort index",h1:"Comfortable",h2:"Warm - caution",h3:"Hot",h4:"Dangerous",dev_on:"Device online",dev_off:"Device offline",ev_pm25:"PM2.5 above threshold",ev_co2:"High CO₂ - open a window to ventilate",ev_aqi:"AQI at unhealthy level",ev_t:"Extreme heat - hydrate and avoid the sun",snd:"Alert sound",full:"Fullscreen",dash:"AIR QUALITY MONITORING",sens:"Sensors",aqiTitle:"Air Quality Index (AQI)",wait:"Waiting for data",mapTitle:"Sensor Location",histTitle:"History",pts:"pts",
   conn:"Connecting...",on:"Connected to Firebase",off:"Disconnected",upd:"Last update",
   g1:"PM2.5 / PM10 (µg/m³)",g2:"Temperature (°C) / Humidity (%)",g3:"CO₂ (ppm)",g4:"AQI",
   foot:"ESP32 + ESPHome → Firebase RTDB → GitHub Pages · Simulated random data",
@@ -203,6 +228,7 @@ let curTile=null;
 function setTiles(){const n=TILES[theme];if(curTile===n)return;if(curTile)map.removeLayer(curTile);n.addTo(map);curTile=n}
 const marker=L.marker(SENSOR_POS,{icon:L.divIcon({className:"",html:'<div class="pulse"></div>',iconSize:[24,24]})}).addTo(map);
 marker.bindPopup("esp32-air-01");
+const zone=L.circle(SENSOR_POS,{radius:400,weight:1,fillOpacity:.14,color:"#22c55e"}).addTo(map);
 
 // ---------- แสดงผล (เรียกซ้ำเมื่อเปลี่ยนภาษา/ธีม) ----------
 function renderLatest(){
@@ -223,18 +249,18 @@ function renderAll(){
  document.getElementById("themeBtn").innerHTML=theme==="dark"?ICONS.sun+" "+t("light"):ICONS.moon+" "+t("dark");
  document.getElementById("gauge").style.color=css("--tx");setTiles();
  charts.forEach(o=>{o.ch.data.datasets.forEach(s=>s.label=t("f_"+s.key));themeChart(o.ch)});
- renderLatest()}
+ renderLatest();renderExtra()}
 document.getElementById("langBtn").onclick=()=>{lang=lang==="th"?"en":"th";try{localStorage.setItem("lang",lang)}catch(e){}renderAll()};
 document.getElementById("themeBtn").onclick=()=>{theme=theme==="dark"?"light":"dark";try{localStorage.setItem("theme",theme)}catch(e){}renderAll()};
 
 // ---------- Realtime: latest ----------
 db.ref("latest").on("value",snap=>{
  const d=snap.val();if(!d)return;lastData=d;
- if(typeof d.lat==="number"&&typeof d.lng==="number")marker.setLatLng([d.lat,d.lng]);
- document.documentElement.style.setProperty("--mc",aqiInfo(d.aqi).c);
+ if(typeof d.lat==="number"&&typeof d.lng==="number"){marker.setLatLng([d.lat,d.lng]);zone.setLatLng([d.lat,d.lng])}
+ document.documentElement.style.setProperty("--mc",aqiInfo(d.aqi).c);zone.setStyle({color:aqiInfo(d.aqi).c,fillColor:aqiInfo(d.aqi).c});
  FIELDS.forEach(f=>{if(typeof d[f.k]==="number"){setNum(document.getElementById("v-"+f.k),d[f.k],f.d);flash(f.k)}});
  const v=document.getElementById("aqiV");setNum(v,d.aqi,0);v.style.color=aqiInfo(d.aqi).c;
- setNeedle(d.aqi);renderLatest()});
+ setNeedle(d.aqi);renderLatest();onLatest(d)});
 
 // ---------- Realtime: history ----------
 let histRef=null;
@@ -242,10 +268,46 @@ function subscribeHistory(n){
  if(histRef)histRef.off();
  histRef=db.ref("history").limitToLast(n);
  histRef.on("value",snap=>{const rows=[];snap.forEach(c=>{rows.push(c.val())});
-  const labels=rows.map(r=>fmtTime(r.timestamp));
+  const labels=rows.map(r=>fmtTime(r.timestamp));onRows(rows);
   charts.forEach(o=>{o.ch.data.labels=labels;o.ch.data.datasets.forEach(s=>s.data=rows.map(r=>r[s.key]));o.ch.update()})})}
 document.querySelectorAll("#seg .btn").forEach(b=>b.onclick=()=>{document.querySelectorAll("#seg .btn").forEach(x=>x.classList.remove("on"));b.classList.add("on");subscribeHistory(+b.dataset.n)});
 db.ref(".info/connected").on("value",s=>{online=s.val()===true;document.getElementById("dot").className="dot"+(online?" on":"");document.getElementById("status").textContent=online?t("on"):t("off")});
+
+// ---------- ฟีเจอร์เสริม ----------
+const IC2={vol:svg('<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),mute:svg('<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m23 9-6 6M17 9l6 6"/>'),
+ full:svg('<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>'),
+ dl:svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>'),
+ alert:svg('<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4M12 17h.01"/>')};
+const RULES=[{k:"pm25",on:d=>d.pm25>=55,m:"ev_pm25"},{k:"co2",on:d=>d.co2>=1000,m:"ev_co2"},{k:"aqi",on:d=>d.aqi>150,m:"ev_aqi"},{k:"heat",on:d=>d.temperature>=34,m:"ev_t"}];
+let active={},events=[],lastTs=0,devOnline=null,soundOn=false,lastRows=[],actx=null;
+function beep(){if(!soundOn)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
+function addEv(cls,m,rec){events.unshift({ts:new Date(),cls,m,rec});events=events.slice(0,30);renderLog()}
+function heatIndex(T,H){const f=T*9/5+32;let h=.5*(f+61+(f-68)*1.2+H*.094);if(h>=80)h=-42.379+2.04901523*f+10.14333127*H-.22475541*f*H-.00683783*f*f-.05481717*H*H+.00122874*f*f*H+.00085282*f*H*H-.00000199*f*f*H*H;return(h-32)*5/9}
+function renderHI(d){const h=heatIndex(d.temperature,d.humidity),l=h<27?1:h<32?2:h<41?3:4;
+ document.getElementById("hi").innerHTML=`<span>${t("hi")}</span><b style="color:${["","#22c55e","#eab308","#f97316","#ef4444"][l]}">${h.toFixed(1)} °C · ${t("h"+l)}</b>`}
+function renderBanner(){const m=RULES.filter(r=>active[r.k]).map(r=>t(r.m)),b=document.getElementById("banner");b.classList.toggle("show",m.length>0);b.innerHTML=IC2.alert+"<span>"+m.join(" · ")+"</span>"}
+function renderLog(){document.getElementById("log").innerHTML=events.length?events.map(e=>`<li class="${e.cls}"><span>${e.ts.toLocaleTimeString(lang==="th"?"th-TH":"en-GB")}</span>${e.rec?t("ok")+" · ":""}${t(e.m)}</li>`).join(""):`<li>${t("noEv")}</li>`}
+function renderDev(){const c=document.getElementById("dev");c.className="chip "+(devOnline===null?"":devOnline?"on":"off");c.textContent=devOnline===null?t("conn"):t(devOnline?"dev_on":"dev_off")}
+function checkDev(){const on=!!lastTs&&Date.now()-lastTs<90000;if(on!==devOnline){const first=devOnline===null;devOnline=on;if(!first||on)addEv(on?"ok":"warn",on?"dev_on":"dev_off")}renderDev()}
+function onLatest(d){lastTs=d.timestamp>1e9?d.timestamp*1000:Date.now();checkDev();
+ RULES.forEach(r=>{const on=r.on(d);if(on&&!active[r.k]){addEv("warn",r.m);beep()}if(!on&&active[r.k])addEv("ok",r.m,true);active[r.k]=on});
+ renderBanner();renderHI(d)}
+function renderStats(){const tb=document.getElementById("stats");if(!lastRows.length){tb.innerHTML="";return}
+ tb.innerHTML=`<tr><th></th><th>${t("mn")}</th><th>${t("mx")}</th><th>${t("av")}</th></tr>`+FIELDS.map(f=>{const v=lastRows.map(r=>r[f.k]).filter(x=>typeof x==="number");if(!v.length)return"";
+  return`<tr><td style="color:${f.c}">${t("f_"+f.k)}</td><td>${Math.min(...v).toFixed(f.d)}</td><td>${Math.max(...v).toFixed(f.d)}</td><td>${(v.reduce((a,b)=>a+b,0)/v.length).toFixed(f.d)}</td></tr>`}).join("")}
+function onRows(r){lastRows=r;renderStats()}
+function renderExtra(){document.getElementById("csvBtn").innerHTML=IC2.dl+" "+t("csv");
+ document.getElementById("sndBtn").innerHTML=soundOn?IC2.vol:IC2.mute;document.getElementById("sndBtn").title=t("snd");
+ document.getElementById("fsBtn").innerHTML=IC2.full;document.getElementById("fsBtn").title=t("full");
+ renderDev();renderBanner();renderLog();renderStats();if(lastData)renderHI(lastData)}
+document.getElementById("sndBtn").onclick=()=>{soundOn=!soundOn;renderExtra();beep()};
+document.getElementById("fsBtn").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
+document.addEventListener("fullscreenchange",()=>{document.body.classList.toggle("kiosk",!!document.fullscreenElement);setTimeout(()=>map.invalidateSize(),300)});
+document.getElementById("csvBtn").onclick=()=>{if(!lastRows.length)return;
+ const csv="timestamp,time,"+FIELDS.map(f=>f.k).join(",")+"\n"+lastRows.map(r=>[r.timestamp,r.timestamp>1e9?new Date(r.timestamp*1000).toISOString():"",...FIELDS.map(f=>r[f.k])].join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="air-quality-history.csv";a.click()};
+setInterval(checkDev,5000);
+document.querySelectorAll(".panel").forEach((p,i)=>p.style.animationDelay=i*70+"ms");
 
 const pad=n=>String(n).padStart(2,"0");
 function tick(){const d=new Date();document.getElementById("clock").textContent=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
