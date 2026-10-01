@@ -90,6 +90,19 @@ td:first-child{font-family:"Noto Sans Thai",sans-serif;font-size:.78rem}
 .log li span{color:var(--mut);margin-right:8px;font-size:.7rem}
 .log .warn{color:#f97316}.log .ok{color:#22c55e}
 .kiosk footer,.kiosk #seg{display:none}
+.strip{margin-bottom:14px}
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tile{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-left:4px solid var(--tc,#64748b);border-radius:8px;background:transparent;color:var(--tx);cursor:pointer;font:inherit;font-size:.8rem;text-align:left;transition:.2s}
+.tile i{width:8px;height:8px;border-radius:50%;background:var(--tc,#64748b);box-shadow:0 0 8px var(--tc,#64748b)}
+.tile .tn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .tv{color:var(--tc,#64748b)}
+.tile:hover{border-color:var(--acc)}
+.tile.sel{background:rgba(56,189,248,.15);border-color:var(--acc);box-shadow:0 0 14px rgba(56,189,248,.35)}
+.tile.off{opacity:.5}
+.mk{position:relative;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 .72rem Orbitron,sans-serif;color:#04101f;background:var(--mc,#94a3b8);border:2px solid #fff;box-shadow:0 0 12px var(--mc,#94a3b8);transition:transform .2s}
+.mk.off{background:#64748b;box-shadow:none;opacity:.7}
+.mk.sel{transform:scale(1.25)}
+.mk.sel::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--mc,#38bdf8);animation:ring 2s infinite}
 footer{text-align:center;color:var(--mut);font-size:.75rem;margin-top:14px;letter-spacing:.04em}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}#map{min-height:380px}.top{grid-template-columns:1fr}.ttl{order:2}.tr{justify-content:flex-start}}
 </style>
@@ -107,9 +120,11 @@ footer{text-align:center;color:var(--mut);font-size:.75rem;margin-top:14px;lette
 </header>
 <div class="banner" id="banner"></div>
 
+<section class="panel strip"><div class="ph"><span data-i18n="devs"></span><span class="st" id="onc"></span></div><div class="pb"><div class="sg" id="dl"></div></div></section>
+
 <main class="layout">
   <aside class="col">
-    <section class="panel"><div class="ph"><span data-i18n="aqiTitle"></span></div>
+    <section class="panel"><div class="ph"><span data-i18n="aqiTitle"></span><b id="selName" style="color:var(--acc)"></b></div>
       <div class="pb hero">
         <svg class="gauge" viewBox="0 0 220 125" id="gauge"><g id="arcs"></g><g class="needle" id="needle"><line x1="110" y1="110" x2="110" y2="34" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="110" cy="110" r="8" fill="currentColor"/></g></svg>
         <div class="aqiV" id="aqiV">--</div><div class="aqiT" id="aqiT"></div><div class="advice" id="advice"></div>
@@ -145,7 +160,7 @@ const db=firebase.database();
 
 // ---------- ภาษา / Language ----------
 const I18N={
- th:{stats:"สถิติ (ช่วงที่แสดง)",mn:"ต่ำสุด",mx:"สูงสุด",av:"เฉลี่ย",log:"บันทึกเหตุการณ์",csv:"CSV",noEv:"ยังไม่มีเหตุการณ์",ok:"กลับสู่ปกติ",hi:"ดัชนีความสบาย",h1:"สบาย",h2:"อุ่น ควรระวัง",h3:"ร้อนอบอ้าว",h4:"อันตราย",dev_on:"อุปกรณ์ออนไลน์",dev_off:"อุปกรณ์ออฟไลน์",ev_pm25:"PM2.5 สูงเกินเกณฑ์",ev_co2:"CO₂ สูง ควรเปิดหน้าต่างระบายอากาศ",ev_aqi:"AQI อยู่ในระดับมีผลต่อสุขภาพ",ev_t:"อากาศร้อนจัด ควรดื่มน้ำและหลีกเลี่ยงแดด",snd:"เสียงแจ้งเตือน",full:"เต็มจอ",dash:"ระบบเฝ้าระวังคุณภาพอากาศ",sens:"ค่าเซ็นเซอร์",aqiTitle:"ดัชนีคุณภาพอากาศ (AQI)",wait:"รอข้อมูล",mapTitle:"ตำแหน่งของเซ็นเซอร์",histTitle:"กราฟย้อนหลัง",pts:"จุด",
+ th:{devs:"อุปกรณ์ทั้งหมด (12 จุดตรวจวัด)",online:"ออนไลน์",stats:"สถิติ (ช่วงที่แสดง)",mn:"ต่ำสุด",mx:"สูงสุด",av:"เฉลี่ย",log:"บันทึกเหตุการณ์",csv:"CSV",noEv:"ยังไม่มีเหตุการณ์",ok:"กลับสู่ปกติ",hi:"ดัชนีความสบาย",h1:"สบาย",h2:"อุ่น ควรระวัง",h3:"ร้อนอบอ้าว",h4:"อันตราย",dev_on:"อุปกรณ์ออนไลน์",dev_off:"อุปกรณ์ออฟไลน์",ev_pm25:"PM2.5 สูงเกินเกณฑ์",ev_co2:"CO₂ สูง ควรเปิดหน้าต่างระบายอากาศ",ev_aqi:"AQI อยู่ในระดับมีผลต่อสุขภาพ",ev_t:"อากาศร้อนจัด ควรดื่มน้ำและหลีกเลี่ยงแดด",snd:"เสียงแจ้งเตือน",full:"เต็มจอ",dash:"ระบบเฝ้าระวังคุณภาพอากาศ",sens:"ค่าเซ็นเซอร์",aqiTitle:"ดัชนีคุณภาพอากาศ (AQI)",wait:"รอข้อมูล",mapTitle:"ตำแหน่งของเซ็นเซอร์",histTitle:"กราฟย้อนหลัง",pts:"จุด",
   conn:"กำลังเชื่อมต่อ...",on:"เชื่อมต่อ Firebase แล้ว",off:"ขาดการเชื่อมต่อ",upd:"อัปเดตล่าสุด",
   g1:"PM2.5 / PM10 (µg/m³)",g2:"อุณหภูมิ (°C) / ความชื้น (%)",g3:"CO₂ (ppm)",g4:"AQI",
   foot:"ESP32 + ESPHome → Firebase RTDB → GitHub Pages · ข้อมูลจำลองด้วยการสุ่มค่า",
@@ -153,7 +168,7 @@ const I18N={
   f_temperature:"อุณหภูมิ",f_humidity:"ความชื้น",f_pm25:"PM2.5",f_pm10:"PM10",f_co2:"CO₂",f_aqi:"AQI",
   l1:"ดีมาก",l2:"ปานกลาง",l3:"เริ่มมีผลกระทบต่อสุขภาพ",l4:"มีผลกระทบต่อสุขภาพ",
   a1:"อากาศดี ทำกิจกรรมได้ตามปกติ",a2:"ผู้ที่ไวต่อมลพิษควรระวัง",a3:"ลดกิจกรรมกลางแจ้ง ควรสวมหน้ากาก",a4:"งดกิจกรรมกลางแจ้ง ปิดหน้าต่าง/เปิดเครื่องฟอกอากาศ"},
- en:{stats:"Statistics (visible range)",mn:"Min",mx:"Max",av:"Avg",log:"Event Log",csv:"CSV",noEv:"No events yet",ok:"Back to normal",hi:"Comfort index",h1:"Comfortable",h2:"Warm - caution",h3:"Hot",h4:"Dangerous",dev_on:"Device online",dev_off:"Device offline",ev_pm25:"PM2.5 above threshold",ev_co2:"High CO₂ - open a window to ventilate",ev_aqi:"AQI at unhealthy level",ev_t:"Extreme heat - hydrate and avoid the sun",snd:"Alert sound",full:"Fullscreen",dash:"AIR QUALITY MONITORING",sens:"Sensors",aqiTitle:"Air Quality Index (AQI)",wait:"Waiting for data",mapTitle:"Sensor Location",histTitle:"History",pts:"pts",
+ en:{devs:"All Devices (12 Sites)",online:"Online",stats:"Statistics (visible range)",mn:"Min",mx:"Max",av:"Avg",log:"Event Log",csv:"CSV",noEv:"No events yet",ok:"Back to normal",hi:"Comfort index",h1:"Comfortable",h2:"Warm - caution",h3:"Hot",h4:"Dangerous",dev_on:"Device online",dev_off:"Device offline",ev_pm25:"PM2.5 above threshold",ev_co2:"High CO₂ - open a window to ventilate",ev_aqi:"AQI at unhealthy level",ev_t:"Extreme heat - hydrate and avoid the sun",snd:"Alert sound",full:"Fullscreen",dash:"AIR QUALITY MONITORING",sens:"Sensors",aqiTitle:"Air Quality Index (AQI)",wait:"Waiting for data",mapTitle:"Sensor Location",histTitle:"History",pts:"pts",
   conn:"Connecting...",on:"Connected to Firebase",off:"Disconnected",upd:"Last update",
   g1:"PM2.5 / PM10 (µg/m³)",g2:"Temperature (°C) / Humidity (%)",g3:"CO₂ (ppm)",g4:"AQI",
   foot:"ESP32 + ESPHome → Firebase RTDB → GitHub Pages · Simulated random data",
@@ -221,23 +236,57 @@ function themeChart(ch){const o=ch.options,m=css("--mut");
  const tp=o.plugins.tooltip;tp.backgroundColor=css("--tip");tp.borderColor=css("--line");tp.titleColor=css("--tx");tp.bodyColor=css("--tx");ch.update("none")}
 const charts=[mkChart("c1",["pm25","pm10"]),mkChart("c2",["temperature","humidity"]),mkChart("c3",["co2"]),mkChart("c4",["aqi"],{plugins:[bands],min:0,max:200})];
 
-// ---------- แผนที่ ----------
-const map=L.map("map").setView(SENSOR_POS,14);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(map);
-function setTiles(){}
-const marker=L.marker(SENSOR_POS,{icon:L.divIcon({className:"",html:'<div class="pulse"></div>',iconSize:[24,24]})}).addTo(map);
-marker.bindPopup("esp32-air-01");
-const zone=L.circle(SENSOR_POS,{radius:400,weight:1,fillOpacity:.14,color:"#22c55e"}).addTo(map);
+// ---------- อุปกรณ์ทั้ง 12 ตัว (ปรับชื่อ/พิกัดได้) ----------
+const DEVICES=[
+ {id:"air-01",th:"อาคารเรียน 1",en:"Classroom Bldg 1",pos:[7.8812,98.3908]},
+ {id:"air-02",th:"ห้องสมุด",en:"Library",pos:[7.8806,98.3915]},
+ {id:"air-03",th:"โรงอาหาร",en:"Canteen",pos:[7.8799,98.3920]},
+ {id:"air-04",th:"โรงยิม",en:"Gymnasium",pos:[7.8790,98.3934]},
+ {id:"air-05",th:"ห้องปฏิบัติการ",en:"Laboratory",pos:[7.8818,98.3925]},
+ {id:"air-06",th:"หอพัก",en:"Dormitory",pos:[7.8785,98.3908]},
+ {id:"air-07",th:"ลานจอดรถ",en:"Parking Lot",pos:[7.8795,98.3945]},
+ {id:"air-08",th:"ริมถนน",en:"Roadside",pos:[7.8828,98.3942]},
+ {id:"air-09",th:"สวนสาธารณะ",en:"Park",pos:[7.8775,98.3925]},
+ {id:"air-10",th:"ห้องประชุม",en:"Meeting Room",pos:[7.8810,98.3933]},
+ {id:"air-11",th:"ศูนย์คอมพิวเตอร์",en:"Computer Center",pos:[7.8803,98.3903]},
+ {id:"air-12",th:"สนามกีฬา",en:"Sports Field",pos:[7.8780,98.3948]}];
+const S={};DEVICES.forEach(d=>S[d.id]={d:null,ts:0,on:null,wasOff:false,active:{}});
+const dn=id=>DEVICES.find(x=>x.id===id)[lang];
+let sel=DEVICES[0].id,histN=30,histRef=null;
 
-// ---------- แสดงผล (เรียกซ้ำเมื่อเปลี่ยนภาษา/ธีม) ----------
+document.getElementById("dl").innerHTML=DEVICES.map(dv=>`<button class="tile" data-id="${dv.id}"><i></i><span class="tn"></span><b class="orb tv">--</b></button>`).join("");
+document.querySelectorAll(".tile").forEach(b=>b.onclick=()=>select(b.dataset.id));
+
+// ---------- แผนที่ ----------
+const map=L.map("map");
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(map);
+map.fitBounds(DEVICES.map(d=>d.pos),{padding:[40,40]});
+const MK={};
+DEVICES.forEach(dv=>{
+ MK[dv.id]=L.marker(dv.pos,{icon:L.divIcon({className:"",html:`<div class="mk" id="mk-${dv.id}">--</div>`,iconSize:[34,34],iconAnchor:[17,17]})}).addTo(map);
+ MK[dv.id].bindTooltip(dv.id,{direction:"top",offset:[0,-18]});
+ MK[dv.id].on("click",()=>select(dv.id));
+});
+
+// ---------- แสดงผล ----------
+function renderTile(id){
+ const s=S[id],tl=document.querySelector(`.tile[data-id="${id}"]`),m=document.getElementById("mk-"+id),d=s.d,c=d?aqiInfo(d.aqi).c:"#64748b";
+ tl.classList.toggle("off",!s.on);tl.classList.toggle("sel",id===sel);
+ tl.querySelector(".tn").textContent=dn(id);tl.querySelector(".tv").textContent=d?Math.round(d.aqi):"--";tl.style.setProperty("--tc",s.on?c:"#64748b");
+ if(m){m.textContent=d?Math.round(d.aqi):"--";m.style.setProperty("--mc",c);m.classList.toggle("off",!s.on);m.classList.toggle("sel",id===sel)}}
 function renderLatest(){
- const d=lastData,a=d?aqiInfo(d.aqi):null;
- document.getElementById("aqiT").textContent=d?a.t:t("wait");
+ const d=lastData,a=d?aqiInfo(d.aqi):null,T=document.getElementById("aqiT");
+ T.textContent=d?a.t:t("wait");T.style.color=d?a.c:"";
  document.getElementById("advice").textContent=d?a.a:"";
- if(d){document.getElementById("aqiT").style.color=a.c;
-  marker.setPopupContent(`<b>${d.device_id||"esp32-air-01"}</b><br>AQI: ${Math.round(d.aqi)} (${a.t})<br>PM2.5: ${Number(d.pm25).toFixed(1)} µg/m³<br>${t("f_temperature")}: ${Number(d.temperature).toFixed(1)} °C`)}
- else marker.setPopupContent("esp32-air-01<br>"+t("wait"));
  document.getElementById("upd").textContent=d?(fmtTime(d.timestamp)!=="-"?fmtTime(d.timestamp):new Date().toLocaleTimeString()):"-"}
+function showSel(){
+ const d=S[sel].d;lastData=d;document.getElementById("selName").textContent=dn(sel);
+ if(!d){FIELDS.forEach(f=>document.getElementById("v-"+f.k).textContent="--");document.getElementById("aqiV").textContent="--";renderLatest();return}
+ FIELDS.forEach(f=>{if(typeof d[f.k]==="number"){setNum(document.getElementById("v-"+f.k),d[f.k],f.d);flash(f.k)}});
+ const v=document.getElementById("aqiV"),a=aqiInfo(d.aqi);setNum(v,d.aqi,0);v.style.color=a.c;setNeedle(d.aqi);renderLatest();renderHI(d)}
+function select(id){
+ sel=id;DEVICES.forEach(dv=>renderTile(dv.id));showSel();subscribeHistory();
+ map.panTo(DEVICES.find(x=>x.id===id).pos)}
 function renderAll(){
  document.documentElement.lang=lang;document.documentElement.dataset.theme=theme;
  document.querySelectorAll("[data-i18n]").forEach(e=>e.textContent=t(e.dataset.i18n));
@@ -246,51 +295,39 @@ function renderAll(){
  document.getElementById("status").textContent=online===null?t("conn"):online?t("on"):t("off");
  document.getElementById("langBtn").innerHTML=ICONS.globe+" "+t("lang");
  document.getElementById("themeBtn").innerHTML=theme==="dark"?ICONS.sun+" "+t("light"):ICONS.moon+" "+t("dark");
- document.getElementById("gauge").style.color=css("--tx");setTiles();
+ document.getElementById("gauge").style.color=css("--tx");
  charts.forEach(o=>{o.ch.data.datasets.forEach(s=>s.label=t("f_"+s.key));themeChart(o.ch)});
+ DEVICES.forEach(dv=>{renderTile(dv.id);MK[dv.id].setTooltipContent(dn(dv.id))});
+ document.getElementById("selName").textContent=dn(sel);
  renderLatest();renderExtra()}
 document.getElementById("langBtn").onclick=()=>{lang=lang==="th"?"en":"th";try{localStorage.setItem("lang",lang)}catch(e){}renderAll()};
 document.getElementById("themeBtn").onclick=()=>{theme=theme==="dark"?"light":"dark";try{localStorage.setItem("theme",theme)}catch(e){}renderAll()};
 
-// ---------- Realtime: latest ----------
-db.ref("latest").on("value",snap=>{
- const d=snap.val();if(!d)return;lastData=d;
- if(typeof d.lat==="number"&&typeof d.lng==="number"){marker.setLatLng([d.lat,d.lng]);zone.setLatLng([d.lat,d.lng])}
- document.documentElement.style.setProperty("--mc",aqiInfo(d.aqi).c);zone.setStyle({color:aqiInfo(d.aqi).c,fillColor:aqiInfo(d.aqi).c});
- FIELDS.forEach(f=>{if(typeof d[f.k]==="number"){setNum(document.getElementById("v-"+f.k),d[f.k],f.d);flash(f.k)}});
- const v=document.getElementById("aqiV");setNum(v,d.aqi,0);v.style.color=aqiInfo(d.aqi).c;
- setNeedle(d.aqi);renderLatest();onLatest(d)});
-
-// ---------- Realtime: history ----------
-let histRef=null;
-function subscribeHistory(n){
- if(histRef)histRef.off();
- histRef=db.ref("history").limitToLast(n);
- histRef.on("value",snap=>{const rows=[];snap.forEach(c=>{rows.push(c.val())});
-  const labels=rows.map(r=>fmtTime(r.timestamp));onRows(rows);
-  charts.forEach(o=>{o.ch.data.labels=labels;o.ch.data.datasets.forEach(s=>s.data=rows.map(r=>r[s.key]));o.ch.update()})})}
-document.querySelectorAll("#seg .btn").forEach(b=>b.onclick=()=>{document.querySelectorAll("#seg .btn").forEach(x=>x.classList.remove("on"));b.classList.add("on");subscribeHistory(+b.dataset.n)});
-db.ref(".info/connected").on("value",s=>{online=s.val()===true;document.getElementById("dot").className="dot"+(online?" on":"");document.getElementById("status").textContent=online?t("on"):t("off")});
-
-// ---------- ฟีเจอร์เสริม ----------
+// ---------- ฟีเจอร์เสริม (แยกตามอุปกรณ์) ----------
 const IC2={vol:svg('<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),mute:svg('<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m23 9-6 6M17 9l6 6"/>'),
  full:svg('<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>'),
  dl:svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>'),
  alert:svg('<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4M12 17h.01"/>')};
 const RULES=[{k:"pm25",on:d=>d.pm25>=55,m:"ev_pm25"},{k:"co2",on:d=>d.co2>=1000,m:"ev_co2"},{k:"aqi",on:d=>d.aqi>150,m:"ev_aqi"},{k:"heat",on:d=>d.temperature>=34,m:"ev_t"}];
-let active={},events=[],lastTs=0,devOnline=null,soundOn=false,lastRows=[],actx=null;
-function beep(){if(!soundOn)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
-function addEv(cls,m,rec){events.unshift({ts:new Date(),cls,m,rec});events=events.slice(0,30);renderLog()}
+let events=[],soundOn=false,lastRows=[],actx=null,lastBeep=0;
+function beep(){if(!soundOn||Date.now()-lastBeep<5000)return;lastBeep=Date.now();try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
+function addEv(cls,id,m,rec){events.unshift({ts:new Date(),cls,id,m,rec});events=events.slice(0,40);renderLog()}
 function heatIndex(T,H){const f=T*9/5+32;let h=.5*(f+61+(f-68)*1.2+H*.094);if(h>=80)h=-42.379+2.04901523*f+10.14333127*H-.22475541*f*H-.00683783*f*f-.05481717*H*H+.00122874*f*f*H+.00085282*f*H*H-.00000199*f*f*H*H;return(h-32)*5/9}
 function renderHI(d){const h=heatIndex(d.temperature,d.humidity),l=h<27?1:h<32?2:h<41?3:4;
  document.getElementById("hi").innerHTML=`<span>${t("hi")}</span><b style="color:${["","#22c55e","#eab308","#f97316","#ef4444"][l]}">${h.toFixed(1)} °C · ${t("h"+l)}</b>`}
-function renderBanner(){const m=RULES.filter(r=>active[r.k]).map(r=>t(r.m)),b=document.getElementById("banner");b.classList.toggle("show",m.length>0);b.innerHTML=IC2.alert+"<span>"+m.join(" · ")+"</span>"}
-function renderLog(){document.getElementById("log").innerHTML=events.length?events.map(e=>`<li class="${e.cls}"><span>${e.ts.toLocaleTimeString(lang==="th"?"th-TH":"en-GB")}</span>${e.rec?t("ok")+" · ":""}${t(e.m)}</li>`).join(""):`<li>${t("noEv")}</li>`}
-function renderDev(){const c=document.getElementById("dev");c.className="chip "+(devOnline===null?"":devOnline?"on":"off");c.textContent=devOnline===null?t("conn"):t(devOnline?"dev_on":"dev_off")}
-function checkDev(){const on=!!lastTs&&Date.now()-lastTs<90000;if(on!==devOnline){const first=devOnline===null;devOnline=on;if(!first||on)addEv(on?"ok":"warn",on?"dev_on":"dev_off")}renderDev()}
-function onLatest(d){lastTs=d.timestamp>1e9?d.timestamp*1000:Date.now();checkDev();
- RULES.forEach(r=>{const on=r.on(d);if(on&&!active[r.k]){addEv("warn",r.m);beep()}if(!on&&active[r.k])addEv("ok",r.m,true);active[r.k]=on});
- renderBanner();renderHI(d)}
+function renderBanner(){const m=[];DEVICES.forEach(dv=>RULES.forEach(r=>{if(S[dv.id].active[r.k])m.push(`${dn(dv.id)}: ${t(r.m)}`)}));
+ const b=document.getElementById("banner");b.classList.toggle("show",m.length>0);
+ b.innerHTML=IC2.alert+"<span>"+m.slice(0,3).join(" · ")+(m.length>3?` (+${m.length-3})`:"")+"</span>"}
+function renderLog(){document.getElementById("log").innerHTML=events.length?events.map(e=>`<li class="${e.cls}"><span>${e.ts.toLocaleTimeString(lang==="th"?"th-TH":"en-GB")}</span>${dn(e.id)} · ${e.rec?t("ok")+" · ":""}${t(e.m)}</li>`).join(""):`<li>${t("noEv")}</li>`}
+function checkDev(){let n=0,sum=0,c=0;
+ DEVICES.forEach(dv=>{const s=S[dv.id],on=!!s.ts&&Date.now()-s.ts<90000;
+  if(on!==s.on){const prev=s.on;s.on=on;if(on){if(s.wasOff)addEv("ok",dv.id,"dev_on")}else if(prev===true){s.wasOff=true;addEv("warn",dv.id,"dev_off")}renderTile(dv.id)}
+  if(on){n++;if(s.d){sum+=s.d.aqi;c++}}});
+ const chip=document.getElementById("dev");chip.className="chip "+(n===DEVICES.length?"on":n?"":"off");chip.textContent=`${t("online")}: ${n}/${DEVICES.length}`;
+ document.getElementById("onc").textContent=c?`${t("av")} AQI: ${Math.round(sum/c)}`:""}
+function onDevice(id,d){if(!d)return;const s=S[id];s.d=d;s.ts=d.timestamp>1e9?d.timestamp*1000:Date.now();
+ RULES.forEach(r=>{const on=r.on(d);if(on&&!s.active[r.k]){addEv("warn",id,r.m);beep()}if(!on&&s.active[r.k])addEv("ok",id,r.m,true);s.active[r.k]=on});
+ checkDev();renderTile(id);renderBanner();if(id===sel)showSel()}
 function renderStats(){const tb=document.getElementById("stats");if(!lastRows.length){tb.innerHTML="";return}
  tb.innerHTML=`<tr><th></th><th>${t("mn")}</th><th>${t("mx")}</th><th>${t("av")}</th></tr>`+FIELDS.map(f=>{const v=lastRows.map(r=>r[f.k]).filter(x=>typeof x==="number");if(!v.length)return"";
   return`<tr><td style="color:${f.c}">${t("f_"+f.k)}</td><td>${Math.min(...v).toFixed(f.d)}</td><td>${Math.max(...v).toFixed(f.d)}</td><td>${(v.reduce((a,b)=>a+b,0)/v.length).toFixed(f.d)}</td></tr>`}).join("")}
@@ -298,20 +335,30 @@ function onRows(r){lastRows=r;renderStats()}
 function renderExtra(){document.getElementById("csvBtn").innerHTML=IC2.dl+" "+t("csv");
  document.getElementById("sndBtn").innerHTML=soundOn?IC2.vol:IC2.mute;document.getElementById("sndBtn").title=t("snd");
  document.getElementById("fsBtn").innerHTML=IC2.full;document.getElementById("fsBtn").title=t("full");
- renderDev();renderBanner();renderLog();renderStats();if(lastData)renderHI(lastData)}
+ checkDev();renderBanner();renderLog();renderStats();if(lastData)renderHI(lastData)}
 document.getElementById("sndBtn").onclick=()=>{soundOn=!soundOn;renderExtra();beep()};
 document.getElementById("fsBtn").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
 document.addEventListener("fullscreenchange",()=>{document.body.classList.toggle("kiosk",!!document.fullscreenElement);setTimeout(()=>map.invalidateSize(),300)});
 document.getElementById("csvBtn").onclick=()=>{if(!lastRows.length)return;
  const csv="timestamp,time,"+FIELDS.map(f=>f.k).join(",")+"\n"+lastRows.map(r=>[r.timestamp,r.timestamp>1e9?new Date(r.timestamp*1000).toISOString():"",...FIELDS.map(f=>r[f.k])].join(",")).join("\n");
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="air-quality-history.csv";a.click()};
-setInterval(checkDev,5000);
-document.querySelectorAll(".panel").forEach((p,i)=>p.style.animationDelay=i*70+"ms");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download=`${sel}-history.csv`;a.click()};
+
+// ---------- Realtime ----------
+DEVICES.forEach(dv=>db.ref("devices/"+dv.id+"/latest").on("value",snap=>onDevice(dv.id,snap.val())));
+function subscribeHistory(){
+ if(histRef)histRef.off();
+ histRef=db.ref("devices/"+sel+"/history").limitToLast(histN);
+ histRef.on("value",snap=>{const rows=[];snap.forEach(c=>{rows.push(c.val())});
+  const labels=rows.map(r=>fmtTime(r.timestamp));onRows(rows);
+  charts.forEach(o=>{o.ch.data.labels=labels;o.ch.data.datasets.forEach(s=>s.data=rows.map(r=>r[s.key]));o.ch.update()})})}
+document.querySelectorAll("#seg .btn").forEach(b=>b.onclick=()=>{document.querySelectorAll("#seg .btn").forEach(x=>x.classList.remove("on"));b.classList.add("on");histN=+b.dataset.n;subscribeHistory()});
+db.ref(".info/connected").on("value",s=>{online=s.val()===true;document.getElementById("dot").className="dot"+(online?" on":"");document.getElementById("status").textContent=online?t("on"):t("off")});
 
 const pad=n=>String(n).padStart(2,"0");
 function tick(){const d=new Date();document.getElementById("clock").textContent=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
-setInterval(tick,1000);tick();
-setNeedle(0);renderAll();subscribeHistory(30);setTimeout(()=>map.invalidateSize(),400);
+setInterval(tick,1000);tick();setInterval(checkDev,5000);
+document.querySelectorAll(".panel").forEach((p,i)=>p.style.animationDelay=i*70+"ms");
+setNeedle(0);renderAll();select(sel);setTimeout(()=>map.invalidateSize(),400);
 </script>
 </body>
 </html>
