@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Air Quality Freeboard</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--tx:#e2e8f0;--mut:#94a3b8;--line:#334155}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,"Noto Sans Thai",sans-serif;background:var(--bg);color:var(--tx);padding:16px}
+.wrap{max-width:1100px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+h1{font-size:1.4rem;margin:0}
+.st{font-size:.85rem;color:var(--mut)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px}
+.dot.on{background:#22c55e;box-shadow:0 0 8px #22c55e}
+.aqi{background:var(--card);border-radius:14px;padding:20px;margin-bottom:16px;text-align:center;border:2px solid var(--line)}
+.aqi .v{font-size:3.2rem;font-weight:700}
+.aqi .t{font-size:1.1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border-radius:14px;padding:14px;border-left:5px solid var(--line)}
+.card .n{color:var(--mut);font-size:.85rem}
+.card .v{font-size:1.7rem;font-weight:600}
+.card .u{font-size:.8rem;color:var(--mut)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.box{background:var(--card);border-radius:14px;padding:12px}
+.box h3{margin:0 0 8px;font-size:.95rem;color:var(--mut)}
+.ico{width:1.1em;height:1.1em;vertical-align:-.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+h1 .ico{width:1.3em;height:1.3em;color:#22c55e;margin-right:6px}
+.card .n .ico{margin-right:6px}
+#map{height:320px;border-radius:10px}
+.box.map{margin-bottom:12px}
+.leaflet-container{background:#cbd5e1}
+footer{text-align:center;color:var(--mut);font-size:.8rem;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1><svg class="ico" viewBox="0 0 24 24"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>Smart Air Quality Dashboard</h1>
+  <div class="st"><span id="dot" class="dot"></span><span id="status">กำลังเชื่อมต่อ...</span> · อัปเดตล่าสุด: <span id="upd">-</span></div>
+</header>
+
+<div class="aqi" id="aqiBox">
+  <div class="n">ดัชนีคุณภาพอากาศ (AQI)</div>
+  <div class="v" id="aqiV">--</div>
+  <div class="t" id="aqiT">รอข้อมูล</div>
+  <div class="st" id="advice"></div>
+</div>
+
+<div class="grid" id="cards"></div>
+
+<div class="box map">
+  <h3><svg class="ico" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> ตำแหน่งของเซ็นเซอร์</h3>
+  <div id="map"></div>
+</div>
+
+<div class="charts">
+  <div class="box"><h3>PM2.5 / PM10 (µg/m³)</h3><canvas id="c1"></canvas></div>
+  <div class="box"><h3>อุณหภูมิ (°C) / ความชื้น (%)</h3><canvas id="c2"></canvas></div>
+  <div class="box"><h3>CO₂ (ppm)</h3><canvas id="c3"></canvas></div>
+  <div class="box"><h3>AQI</h3><canvas id="c4"></canvas></div>
+</div>
+<footer>ESP32 + ESPHome → Firebase RTDB → GitHub Pages · ข้อมูลจำลองด้วยการสุ่มค่า</footer>
+</div>
+
+<script>
+// ===== ตั้งค่า =====
+const DB_URL = "https://iot-131-default-rtdb.asia-southeast1.firebasedatabase.app";
+const HISTORY_POINTS = 30;
+
+firebase.initializeApp({ databaseURL: DB_URL });
+const db = firebase.database();
+
+const FIELDS = [
+  {k:"temperature", n:"อุณหภูมิ", u:"°C", d:1, c:"#f97316"},
+  {k:"humidity",    n:"ความชื้น", u:"%", d:1, c:"#38bdf8"},
+  {k:"pm25",        n:"PM2.5", u:"µg/m³", d:1, c:"#ef4444"},
+  {k:"pm10",        n:"PM10", u:"µg/m³", d:1, c:"#a855f7"},
+  {k:"co2",         n:"CO₂", u:"ppm", d:0, c:"#eab308"},
+  {k:"aqi",         n:"AQI", u:"", d:0, c:"#22c55e"}
+];
+
+function aqiInfo(v){
+  if(v<=50)  return {t:"ดีมาก",c:"#22c55e",a:"อากาศดี ทำกิจกรรมได้ตามปกติ"};
+  if(v<=100) return {t:"ปานกลาง",c:"#eab308",a:"ผู้ที่ไวต่อมลพิษควรระวัง"};
+  if(v<=150) return {t:"เริ่มมีผลกระทบต่อสุขภาพ",c:"#f97316",a:"ลดกิจกรรมกลางแจ้ง ควรสวมหน้ากาก"};
+  return {t:"มีผลกระทบต่อสุขภาพ",c:"#ef4444",a:"งดกิจกรรมกลางแจ้ง ปิดหน้าต่าง/เปิดเครื่องฟอกอากาศ"};
+}
+
+// ไอคอน SVG (ไม่ต้องใช้อีโมจิ)
+const svg = p => `<svg class="ico" viewBox="0 0 24 24" style="color:currentColor">${p}</svg>`;
+const ICONS = {
+  temperature: svg('<path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>'),
+  humidity:    svg('<path d="M12 2.7s6 6.3 6 10.8a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7Z"/>'),
+  pm25:        svg('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>'),
+  pm10:        svg('<circle cx="7" cy="8" r="1.5"/><circle cx="14" cy="6" r="1"/><circle cx="17" cy="12" r="2"/><circle cx="9" cy="15" r="2"/><circle cx="15" cy="18" r="1"/><circle cx="4" cy="14" r="1"/>'),
+  co2:         svg('<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4 4 0 0 1 0 8Z"/>'),
+  aqi:         svg('<path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/>')
+};
+
+// สร้างการ์ด
+const cardsEl = document.getElementById("cards");
+FIELDS.forEach(f=>{
+  cardsEl.insertAdjacentHTML("beforeend",
+   `<div class="card" id="card-${f.k}" style="border-left-color:${f.c}">
+      <div class="n" style="color:${f.c}">${ICONS[f.k]}<span style="color:var(--mut)">${f.n}</span></div><div class="v" id="v-${f.k}">--</div><div class="u">${f.u}</div></div>`);
+});
+
+// สร้างกราฟ
+function mkChart(id, sets){
+  return new Chart(document.getElementById(id), {
+    type:"line",
+    data:{labels:[], datasets:sets.map(s=>({label:s.n,data:[],borderColor:s.c,backgroundColor:s.c+"33",tension:.3,pointRadius:2,fill:sets.length===1}))},
+    options:{animation:false,plugins:{legend:{labels:{color:"#e2e8f0"}}},
+      scales:{x:{ticks:{color:"#94a3b8",maxTicksLimit:6},grid:{color:"#334155"}},
+              y:{ticks:{color:"#94a3b8"},grid:{color:"#334155"}}}}
+  });
+}
+const F = Object.fromEntries(FIELDS.map(f=>[f.k,f]));
+const charts = [
+  {ch:mkChart("c1",[F.pm25,F.pm10]), keys:["pm25","pm10"]},
+  {ch:mkChart("c2",[F.temperature,F.humidity]), keys:["temperature","humidity"]},
+  {ch:mkChart("c3",[F.co2]), keys:["co2"]},
+  {ch:mkChart("c4",[F.aqi]), keys:["aqi"]}
+];
+
+function fmtTime(ts){
+  if(!ts || ts<1e9) return "-";
+  return new Date(ts*1000).toLocaleTimeString("th-TH");
+}
+
+// แผนที่ (ตำแหน่งเริ่มต้น: แก้ค่าเป็นพิกัดจริงของเซ็นเซอร์ได้)
+const SENSOR_POS = [7.8804, 98.3923]; // ภูเก็ต
+const map = L.map("map").setView(SENSOR_POS, 14);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {maxZoom:19, attribution:"&copy; OpenStreetMap"}).addTo(map);
+const marker = L.circleMarker(SENSOR_POS,
+  {radius:14, color:"#fff", weight:3, fillColor:"#94a3b8", fillOpacity:.9}).addTo(map);
+marker.bindPopup("esp32-air-01<br>รอข้อมูล...");
+
+// Realtime: latest
+db.ref("latest").on("value", snap=>{
+  const d = snap.val();
+  if(!d) return;
+  // อัปเดตหมุดบนแผนที่ (ใช้ lat/lng จาก Firebase ถ้ามี)
+  if(typeof d.lat==="number" && typeof d.lng==="number") marker.setLatLng([d.lat,d.lng]);
+  const ai = aqiInfo(d.aqi);
+  marker.setStyle({fillColor:ai.c});
+  marker.setPopupContent(`<b>${d.device_id||"esp32-air-01"}</b><br>AQI: ${Math.round(d.aqi)} (${ai.t})<br>PM2.5: ${Number(d.pm25).toFixed(1)} µg/m³<br>อุณหภูมิ: ${Number(d.temperature).toFixed(1)} °C`);
+  FIELDS.forEach(f=>{
+    if(typeof d[f.k]==="number") document.getElementById("v-"+f.k).textContent = d[f.k].toFixed(f.d);
+  });
+  const a = aqiInfo(d.aqi);
+  document.getElementById("aqiV").textContent = Math.round(d.aqi);
+  document.getElementById("aqiV").style.color = a.c;
+  document.getElementById("aqiT").textContent = a.t;
+  document.getElementById("advice").textContent = a.a;
+  document.getElementById("aqiBox").style.borderColor = a.c;
+  document.getElementById("upd").textContent = fmtTime(d.timestamp) !== "-" ? fmtTime(d.timestamp) : new Date().toLocaleTimeString("th-TH");
+});
+
+// Realtime: history (ล่าสุด N รายการ)
+db.ref("history").limitToLast(HISTORY_POINTS).on("value", snap=>{
+  const rows = [];
+  snap.forEach(c=>{ rows.push(c.val()); });
+  const labels = rows.map(r=>fmtTime(r.timestamp));
+  charts.forEach(o=>{
+    o.ch.data.labels = labels;
+    o.keys.forEach((k,i)=>{ o.ch.data.datasets[i].data = rows.map(r=>r[k]); });
+    o.ch.update();
+  });
+});
+
+// สถานะการเชื่อมต่อ
+db.ref(".info/connected").on("value", s=>{
+  const on = s.val()===true;
+  document.getElementById("dot").className = "dot"+(on?" on":"");
+  document.getElementById("status").textContent = on ? "เชื่อมต่อ Firebase แล้ว" : "ขาดการเชื่อมต่อ";
+});
+</script>
+</body>
+</html>
